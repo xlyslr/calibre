@@ -121,6 +121,8 @@ def find_tests(which_tests=None):
         a(find_tests())
         from calibre.library.comments import find_tests
         a(find_tests())
+        from calibre.gui2.viewer2.convert_book import find_tests
+        a(find_tests())
         a(unittest.defaultTestLoader.loadTestsFromTestCase(TestImports))
     if ok('dbcli'):
         from calibre.db.cli.tests import find_tests
