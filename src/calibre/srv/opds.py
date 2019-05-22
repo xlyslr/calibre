@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # vim:fileencoding=UTF-8:ts=4:sw=4:sta:et:sts=4:ai
+from __future__ import unicode_literals
 
 __license__   = 'GPL v3'
 __copyright__ = '2010, Kovid Goyal <kovid@kovidgoyal.net>'
@@ -26,7 +27,7 @@ from calibre import force_unicode
 from calibre.srv.errors import HTTPNotFound, HTTPInternalServerError
 from calibre.srv.routes import endpoint
 from calibre.srv.utils import get_library_data, http_date, Offsets
-from polyglot.builtins import iteritems, unicode_type, filter
+from polyglot.builtins import iteritems, unicode_type, filter, as_bytes
 from polyglot.urllib import urlencode
 from polyglot.binary import as_hex_unicode, from_hex_unicode
 
@@ -36,7 +37,7 @@ def atom(ctx, rd, endpoint, output):
     rd.outheaders.set('Calibre-Instance-Id', force_unicode(prefs['installation_uuid'], 'utf-8'), replace_all=True)
     if isinstance(output, bytes):
         ans = output  # Assume output is already UTF-8 XML
-    elif isinstance(output, type('')):
+    elif isinstance(output, unicode_type):
         ans = output.encode('utf-8')
     else:
         from lxml import etree
@@ -97,7 +98,7 @@ SUBTITLE = E.subtitle
 
 def NAVCATALOG_ENTRY(url_for, updated, title, description, query):
     href = url_for('/opds/navcatalog', which=as_hex_unicode(query))
-    id_ = 'calibre-navcatalog:'+str(hashlib.sha1(href).hexdigest())
+    id_ = 'calibre-navcatalog:' + hashlib.sha1(as_bytes(href)).hexdigest()
     return E.entry(
         TITLE(title),
         ID(id_),
@@ -116,7 +117,7 @@ PREVIOUS_LINK  = partial(NAVLINK, rel='previous')
 
 
 def html_to_lxml(raw):
-    raw = u'<div>%s</div>'%raw
+    raw = '<div>%s</div>'%raw
     root = html.fragment_fromstring(raw)
     root.set('xmlns', "http://www.w3.org/1999/xhtml")
     raw = etree.tostring(root, encoding=None)
@@ -143,7 +144,7 @@ def CATALOG_ENTRY(item, item_kind, request_context, updated, catalog_name,
     id_ = 'calibre:category:'+item.name
     iid = 'N' + item.name
     if item.id is not None:
-        iid = 'I' + str(item.id)
+        iid = 'I' + unicode_type(item.id)
         iid += ':'+item_kind
     href = request_context.url_for('/opds/category', category=as_hex_unicode(catalog_name), which=as_hex_unicode(iid))
     link = NAVLINK(href=href)
@@ -227,7 +228,7 @@ def ACQUISITION_ENTRY(book_id, updated, request_context):
                 link = E.link(type=mt, href=get(what=fmt), rel="http://opds-spec.org/acquisition")
                 ffm = fm.get(fmt.upper())
                 if ffm:
-                    link.set('length', str(ffm['size']))
+                    link.set('length', unicode_type(ffm['size']))
                     link.set('mtime', ffm['mtime'].isoformat())
                 ans.append(link)
     ans.append(E.link(type='image/jpeg', href=get(what='cover'), rel="http://opds-spec.org/cover"))
@@ -568,7 +569,7 @@ def opds_category(ctx, rd, category, which):
     ids = rc.db.get_books_for_category(q, which)
     sort_by = 'series' if category == 'series' else 'title'
 
-    return get_acquisition_feed(rc, ids, offset, page_url, up_url, 'calibre-category:'+category+':'+str(which), sort_by=sort_by)
+    return get_acquisition_feed(rc, ids, offset, page_url, up_url, 'calibre-category:'+category+':'+unicode_type(which), sort_by=sort_by)
 
 
 @endpoint('/opds/categorygroup/{category}/{which}', postprocess=atom)

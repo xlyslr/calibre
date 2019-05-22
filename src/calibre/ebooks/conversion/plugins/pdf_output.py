@@ -210,7 +210,7 @@ class PDFOutput(OutputFormatPlugin):
 
     def process_fonts(self):
         ''' Make sure all fonts are embeddable. Also remove some fonts that cause problems. '''
-        from calibre.ebooks.oeb.base import urlnormalize
+        from calibre.ebooks.oeb.base import urlnormalize, css_text
         from calibre.utils.fonts.utils import remove_embed_restriction
 
         processed = set()
@@ -244,7 +244,7 @@ class PDFOutput(OutputFormatPlugin):
                     s = rule.style
                     f = s.getProperty(u'font-family')
                     if f is not None:
-                        font_families = parse_font_family(f.propertyValue.cssText)
+                        font_families = parse_font_family(css_text(f.propertyValue))
                         ff = [x for x in font_families if x.lower() != u'courier']
                         if len(ff) != len(font_families):
                             if 'courier' not in self.filtered_font_warnings:
@@ -269,6 +269,18 @@ class PDFOutput(OutputFormatPlugin):
                     root = item.data
                     if hasattr(root, 'xpath') and margins:
                         root.set('data-calibre-pdf-output-page-margins', json.dumps(margins))
+
+        # Remove javascript
+        for item in self.oeb.spine:
+            root = item.data
+            if hasattr(root, 'xpath'):
+                for script in root.xpath('//*[local-name()="script"]'):
+                    script.text = None
+                    script.attrib.clear()
+                for elem in root.iter('*'):
+                    for attr in tuple(elem.attrib):
+                        if attr.startswith('on'):
+                            elem.set(attr, '')
 
         with TemporaryDirectory('_pdf_out') as oeb_dir:
             from calibre.customize.ui import plugin_for_output_format

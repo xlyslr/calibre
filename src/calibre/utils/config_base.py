@@ -610,12 +610,20 @@ def exec_tweaks(path):
 def read_custom_tweaks():
     make_config_dir()
     tf = tweaks_file()
+    ans = {}
     if os.path.exists(tf):
         with open(tf, 'rb') as f:
             raw = f.read()
-        return json_loads(raw)
+        raw = raw.strip()
+        if not raw:
+            return ans
+        try:
+            return json_loads(raw)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            return ans
     old_tweaks_file = tf.rpartition(u'.')[0] + u'.py'
-    ans = {}
     if os.path.exists(old_tweaks_file):
         ans = exec_tweaks(old_tweaks_file)
         ans = make_unicode(ans)
@@ -629,7 +637,11 @@ def default_tweaks_raw():
 
 def read_tweaks():
     default_tweaks = exec_tweaks(default_tweaks_raw())
-    default_tweaks.update(read_custom_tweaks())
+    try:
+        custom_tweaks = read_custom_tweaks()
+    except Exception:
+        custom_tweaks = {}
+    default_tweaks.update(custom_tweaks)
     return default_tweaks
 
 
