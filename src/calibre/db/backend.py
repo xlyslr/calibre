@@ -15,7 +15,7 @@ import apsw
 from polyglot.builtins import (iteritems, itervalues,
         unicode_type, reraise, string_or_bytes, cmp, native_string_type)
 
-from calibre import isbytestring, force_unicode, prints, as_unicode
+from calibre import isbytestring, force_unicode, prints, as_unicode, sanitize_file_name
 from calibre.constants import (iswindows, filesystem_encoding,
         preferred_encoding, ispy3)
 from calibre.ptempfile import PersistentTemporaryFile, TemporaryFile
@@ -1223,8 +1223,8 @@ class DB(object):
         l = (self.PATH_LIMIT - (extlen // 2) - 2) if iswindows else ((self.PATH_LIMIT - extlen - 2) // 2)
         if l < 5:
             raise ValueError('Extension length too long: %d' % extlen)
-        author = ascii_filename(author)[:l]
-        title  = ascii_filename(title.lstrip())[:l].rstrip()
+        author = sanitize_file_name(author)[:l]
+        title  = sanitize_file_name(title.lstrip())[:l].rstrip()
         if not title:
             title = 'Unknown'[:l]
         name   = title + ' - ' + author
